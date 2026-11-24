@@ -107,3 +107,33 @@ jobs:
         run: |
           docker push "${IMAGE_NAME}:${GITHUB_SHA}"
           docker push "${IMAGE_NAME}:latest"
+  deploy:
+    needs: image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, devops-vm]
+    permissions:
+      contents: read
+      packages: read
+    concurrency:
+      group: deploy-devops-vm
+      cancel-in-progress: false
+    env:
+      VM_SSH_HOST: 172.28.32.1
+      VM_SSH_PORT: 2225
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Log in to GHCR
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: printf '%s\n' "$REGISTRY_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+      - name: Deploy with Ansible
+        working-directory: ansible
+        run: >-
+          ansible-playbook -i inventory/prod.ini deploy.yml
+          -e app_tag="$GITHUB_SHA"
+          -e ansible_host="$VM_SSH_HOST"
+          -e ansible_port="$VM_SSH_PORT"
+          -e 'ansible_ssh_common_args=-oHostKeyAlias=[127.0.0.1]:2222'
