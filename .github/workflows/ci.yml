@@ -49,7 +49,12 @@ jobs:
           python -m pip install -r app/requirements.txt -r requirements-dev.txt
       - name: Unit tests
         run: python -m pytest -q
-  image:`n    needs: test`n    runs-on: ubuntu-latest`n    permissions:`n      contents: read`n      packages: write
+  image:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
