@@ -4,6 +4,7 @@
     name: devops
     groups: docker
     append: true
+  when: app_manage_docker_membership | default(true)
 - name: Pull reviewed application image
   community.docker.docker_image:
     name: "{{ app_image }}"

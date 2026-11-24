@@ -117,7 +117,8 @@ jobs:
       group: deploy-devops-vm
       cancel-in-progress: false
     env:
-      VM_HOST: 192.168.56.101
+      VM_SSH_HOST: 172.28.32.1
+      VM_SSH_PORT: 2225
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -126,7 +127,8 @@ jobs:
       - name: Deploy with Ansible
         working-directory: ansible
         run: >-
-          ansible-playbook -i inventory/prod.ini site.yml
+          ansible-playbook -i inventory/prod.ini deploy.yml
           -e app_tag="$GITHUB_SHA"
-      - name: Check through Nginx
-        run: curl --fail --silent --show-error "http://${VM_HOST}/health"
+          -e ansible_host="$VM_SSH_HOST"
+          -e ansible_port="$VM_SSH_PORT"
+          -e 'ansible_ssh_common_args=-oHostKeyAlias=[127.0.0.1]:2222'

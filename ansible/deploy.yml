@@ -1,0 +1,19 @@
+---
+- name: Deploy the reviewed application image
+  hosts: vm
+  become: false
+  roles:
+    - role: app
+      vars:
+        app_manage_docker_membership: false
+  tasks:
+    - name: Check the application through Nginx
+      ansible.builtin.uri:
+        url: http://127.0.0.1/health
+        return_content: true
+      register: nginx_health
+      retries: 15
+      delay: 2
+      until: >
+        (nginx_health.status | default(-1)) == 200 and
+        (nginx_health.json | default({})).get("status") == "ok"
